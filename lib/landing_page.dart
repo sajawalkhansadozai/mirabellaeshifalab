@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,7 +11,7 @@ class Review {
   final String name;
   final int rating; // 1..5
   final String text;
-  final String when; // short label like "Jan 2025"
+  final String when; // "Jan 2025"
   Review({
     required this.name,
     required this.rating,
@@ -21,41 +22,41 @@ class Review {
 
 final kReviews = <Review>[
   Review(
-    name: 'Ayesha K.',
+    name: 'Ayesha Khan.',
     rating: 5,
     when: 'Feb 2025',
     text:
         'Booked home sample collection. Phlebotomist was on time and very professional. Reports were quick!',
   ),
   Review(
-    name: 'Hassan R.',
+    name: 'Hassan Rana.',
     rating: 5,
     when: 'Jan 2025',
     text:
         'Clean facility and friendly staff. CBC and thyroid tests delivered same day.',
   ),
   Review(
-    name: 'Maria S.',
+    name: 'Maria Slam.',
     rating: 4,
     when: 'Dec 2024',
     text:
         'Affordable packages. Reception helped me pick the right tests for annual checkup.',
   ),
   Review(
-    name: 'Bilal A.',
+    name: 'Bilal Abdullah.',
     rating: 5,
     when: 'Nov 2024',
     text: 'Accurate results and smooth experience. Will return for follow-ups.',
   ),
   Review(
-    name: 'Zainab T.',
+    name: 'Zainab Tehreem.',
     rating: 5,
     when: 'Oct 2024',
     text:
         'Great communication. Got results on email and WhatsApp. Highly recommended.',
   ),
   Review(
-    name: 'Omar N.',
+    name: 'Omar Noman.',
     rating: 4,
     when: 'Sep 2024',
     text: 'Quick turnaround and courteous staff. Parking was easy too.',
@@ -81,9 +82,6 @@ class _LandingPageState extends State<LandingPage>
 
   late final AnimationController _staggerCtrl;
   double _scrollY = 0;
-
-  // Lock → unlock state when navigating to admin
-  bool _adminUnlocking = false;
 
   @override
   void initState() {
@@ -123,13 +121,8 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Future<void> _goToAdmin() async {
-    if (_adminUnlocking) return;
-    setState(() => _adminUnlocking = true);
-    await Future.delayed(const Duration(milliseconds: 220));
     if (!mounted) return;
     await Navigator.of(context).pushNamed('/admin');
-    if (!mounted) return;
-    setState(() => _adminUnlocking = false);
   }
 
   @override
@@ -144,26 +137,16 @@ class _LandingPageState extends State<LandingPage>
                 child: ListView(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   children: [
-                    _DrawerHeaderBrand(onTap: () => _scrollTo(_homeKey)),
+                    _DrawerHeaderBrand(
+                      onTap: () => _scrollTo(_homeKey),
+                      onSecret: _goToAdmin, // 5 taps on logo → admin
+                    ),
                     _NavTile('Home', () => _scrollTo(_homeKey)),
                     _NavTile('Services', () => _scrollTo(_servicesKey)),
                     _NavTile('About', () => _scrollTo(_featuresKey)),
                     _NavTile('Reviews', () => _scrollTo(_reviewsKey)),
                     _NavTile('Contact', () => _scrollTo(_contactKey)),
                     const Divider(),
-                    // Lock item (replaces "Admin" text)
-                    ListTile(
-                      leading: Icon(
-                        _adminUnlocking
-                            ? Icons.lock_open_rounded
-                            : Icons.lock_outline_rounded,
-                      ),
-                      title: const Text('Admin'),
-                      onTap: () async {
-                        Navigator.of(context).maybePop(); // close drawer
-                        await _goToAdmin();
-                      },
-                    ),
                   ],
                 ),
               ),
@@ -171,8 +154,8 @@ class _LandingPageState extends State<LandingPage>
           : null,
       body: Stack(
         children: [
-          // Brand gradient background
-          Container(decoration: const BoxDecoration(gradient: redHeroGradient)),
+          // base background now plain white (removed red hero background)
+          Container(color: Colors.white),
           CustomScrollView(
             controller: _scroll,
             slivers: [
@@ -202,14 +185,18 @@ class _LandingPageState extends State<LandingPage>
                             onTap: () => _scrollTo(_homeKey),
                             child: Row(
                               children: [
-                                // LOGO
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.asset(
-                                    'assets/logo.png', // <-- add this in pubspec.yaml
-                                    height: 52,
-                                    width: 52,
-                                    fit: BoxFit.cover,
+                                _SecretTapDetector(
+                                  taps: 5,
+                                  window: const Duration(seconds: 2),
+                                  onUnlocked: _goToAdmin,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      height: 52,
+                                      width: 52,
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -246,35 +233,6 @@ class _LandingPageState extends State<LandingPage>
                                   'Contact',
                                   () => _scrollTo(_contactKey),
                                 ),
-                                const SizedBox(width: 4),
-                                // Lock icon instead of "Admin" text
-                                IconButton(
-                                  tooltip: _adminUnlocking
-                                      ? 'Unlocking…'
-                                      : 'Admin',
-                                  onPressed: _goToAdmin,
-                                  icon: AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 180),
-                                    transitionBuilder: (child, anim) =>
-                                        FadeTransition(
-                                          opacity: anim,
-                                          child: ScaleTransition(
-                                            scale: Tween<double>(
-                                              begin: 0.9,
-                                              end: 1.0,
-                                            ).animate(anim),
-                                            child: child,
-                                          ),
-                                        ),
-                                    child: Icon(
-                                      _adminUnlocking
-                                          ? Icons.lock_open_rounded
-                                          : Icons.lock_outline_rounded,
-                                      key: ValueKey<bool>(_adminUnlocking),
-                                      color: BrandColors.ink,
-                                    ),
-                                  ),
-                                ),
                               ],
                             )
                           else
@@ -292,11 +250,11 @@ class _LandingPageState extends State<LandingPage>
                 ),
               ),
 
-              // Hero
+              // ===== Full-screen hero with background slider =====
               SliverToBoxAdapter(
-                child: _SectionWrapper(
+                child: _HeroSection(
                   key: _homeKey,
-                  child: _HeroSection(onCTAPressed: _openBookingDialog),
+                  onCTAPressed: _openBookingDialog,
                 ),
               ),
 
@@ -337,7 +295,226 @@ class _LandingPageState extends State<LandingPage>
   }
 }
 
+// ===================== Hero image slider (reusable) =====================
+class HeroImageSlider extends StatefulWidget {
+  const HeroImageSlider({
+    super.key,
+    required this.images,
+    this.interval = const Duration(seconds: 4),
+    this.height,
+    this.borderRadius = 0, // now default to 0 for full-bleed
+  });
+
+  final List<String> images; // asset or http URLs
+  final Duration interval;
+  final double? height;
+  final double borderRadius;
+
+  @override
+  State<HeroImageSlider> createState() => _HeroImageSliderState();
+}
+
+class _HeroImageSliderState extends State<HeroImageSlider> {
+  final _ctrl = PageController();
+  int _index = 0;
+  bool _hover = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.images.length < 2) return;
+    _timer = Timer.periodic(widget.interval, (_) {
+      if (!mounted || _hover) return;
+      final next = (_index + 1) % widget.images.length;
+      _ctrl.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final h = widget.height ?? 420;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(widget.borderRadius),
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            SizedBox(
+              height: h,
+              width: double.infinity,
+              child: PageView.builder(
+                controller: _ctrl,
+                itemCount: widget.images.length,
+                onPageChanged: (i) => setState(() => _index = i),
+                itemBuilder: (context, i) {
+                  final p = widget.images[i];
+                  final ImageProvider provider = p.startsWith('http')
+                      ? NetworkImage(p)
+                      : AssetImage(p);
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Image(image: provider, fit: BoxFit.cover),
+                      ),
+                      // darker overlay for readability
+                      const Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Color(0x55000000),
+                                Color(0x22000000),
+                                Color(0x66000000),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            // tiny dots
+            Positioned(
+              bottom: 12,
+              child: Row(
+                children: List.generate(widget.images.length, (i) {
+                  final active = _index == i;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    height: 8,
+                    width: active ? 18 : 8,
+                    decoration: BoxDecoration(
+                      color: active ? Colors.white : Colors.white70,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ============================ Sections ============================
+
+class _HeroSection extends StatelessWidget {
+  const _HeroSection({super.key, required this.onCTAPressed});
+  final VoidCallback onCTAPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    // fill ~90% of viewport height under the app bar
+    final double heroH = (size.height * 0.9).clamp(520.0, 900.0);
+
+    return SizedBox(
+      height: heroH,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // full-screen background slider
+          HeroImageSlider(
+            images: const [
+              'assets/hero/1.jpeg',
+              'assets/hero/2.jpeg',
+              'assets/hero/3.jpeg',
+              'assets/hero/4.jpeg',
+            ],
+            height: heroH,
+            borderRadius: 0,
+          ),
+
+          // centered text + CTA on top
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'MIRABELLA ESHIFA LAB',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: size.width < 900 ? 42 : 64,
+                        height: 1.05,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.4,
+                        shadows: const [
+                          Shadow(
+                            blurRadius: 12,
+                            offset: Offset(0, 3),
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Your Health, Our Priority',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.98),
+                        fontSize: size.width < 900 ? 18 : 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Accurate, reliable, and timely diagnostics — with convenient home sample collection.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.95),
+                        fontSize: size.width < 900 ? 15 : 18,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    _GradientButton(
+                      onPressed: onCTAPressed,
+                      label: 'Book Your Test Today',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SectionWrapper extends StatelessWidget {
   const _SectionWrapper({super.key, required this.child});
@@ -354,69 +531,6 @@ class _SectionWrapper extends StatelessWidget {
             child: child,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HeroSection extends StatelessWidget {
-  const _HeroSection({required this.onCTAPressed});
-  final VoidCallback onCTAPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.sizeOf(context).width;
-    final isNarrow = w < 900;
-
-    return Padding(
-      padding: EdgeInsets.only(top: isNarrow ? 120 : 140, bottom: 80),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            'MIRABELLA ESHIFA LAB',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isNarrow ? 34 : 54,
-              height: 1.1,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              shadows: const [
-                Shadow(
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
-                  color: Colors.black26,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Your Health, Our Priority',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.95),
-              fontSize: isNarrow ? 18 : 22,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Accurate, reliable, and timely diagnostics — with convenient home sample collection.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.92),
-              fontSize: isNarrow ? 15 : 18,
-            ),
-          ),
-          const SizedBox(height: 28),
-          _GradientButton(
-            onPressed: onCTAPressed,
-            label: 'Book Your Test Today',
-          ),
-          const SizedBox(height: 40),
-        ],
       ),
     );
   }
@@ -771,9 +885,8 @@ class _ContactSection extends StatelessWidget {
                           icon: '✉️',
                           title: 'Email Us',
                           text:
-                              'eshifamirabella@gmail.com\nQuick response guaranteed',
+                              'bookings@mirabellaeshifa.com\nQuick response guaranteed',
                         ),
-                        // NEW: Socials card
                         _HoverScale(
                           child: Container(
                             padding: const EdgeInsets.all(24),
@@ -820,22 +933,21 @@ class _ContactSection extends StatelessWidget {
                                         label: 'Instagram',
                                         icon: Icons.camera_alt_rounded,
                                         onTap: () => _open(
-                                          'https://instagram.com/eshifamirabella', // TODO: replace with your real link
+                                          'https://instagram.com/eshifamirabella',
                                         ),
                                       ),
                                       _SocialButton(
                                         label: 'Facebook',
                                         icon: Icons.facebook_rounded,
                                         onTap: () => _open(
-                                          'https://facebook.com/eshifamirabella', // TODO: replace with your real link
+                                          'https://facebook.com/eshifamirabella',
                                         ),
                                       ),
                                       _SocialButton(
                                         label: 'WhatsApp',
                                         icon: Icons.chat_rounded,
-                                        onTap: () => _open(
-                                          'https://wa.me/923001234567', // TODO: replace with your real number (in international format)
-                                        ),
+                                        onTap: () =>
+                                            _open('https://wa.me/923001234567'),
                                       ),
                                     ],
                                   ),
@@ -863,25 +975,17 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Match app brand color (reddish gradient)
       decoration: const BoxDecoration(gradient: redHeroGradient),
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: _SectionWrapper(
         child: Column(
-          children: [
-            const Text(
+          children: const [
+            Text(
               '© 2025 Mirabella eShifa Lab. All rights reserved. | Committed to your health and wellbeing.',
               style: TextStyle(color: Colors.white),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            // Keep admin link (optional), or remove if you prefer only the lock in the header.
-            TextButton.icon(
-              style: TextButton.styleFrom(foregroundColor: Colors.white70),
-              onPressed: () => Navigator.of(context).pushNamed('/admin'),
-              icon: const Icon(Icons.lock_outline_rounded),
-              label: const Text('Admin'),
-            ),
+            SizedBox(height: 8),
           ],
         ),
       ),
@@ -899,10 +1003,10 @@ class _NavLink extends StatelessWidget {
 
   double _autoSize(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    if (w < 480) return 12; // small phones
-    if (w < 768) return 13; // large phones / small tablets
-    if (w < 1024) return 14; // tablets
-    return 15; // desktop
+    if (w < 480) return 12;
+    if (w < 768) return 13;
+    if (w < 1024) return 14;
+    return 15;
   }
 
   @override
@@ -937,19 +1041,26 @@ class _NavLink extends StatelessWidget {
 }
 
 class _DrawerHeaderBrand extends StatelessWidget {
-  const _DrawerHeaderBrand({required this.onTap});
+  const _DrawerHeaderBrand({required this.onTap, this.onSecret});
   final VoidCallback onTap;
+  final VoidCallback? onSecret;
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.asset(
-          'assets/logo.png', // <-- add this in pubspec.yaml
-          height: 28,
-          width: 28,
-          fit: BoxFit.cover,
+      leading: _SecretTapDetector(
+        taps: 5,
+        window: const Duration(seconds: 2),
+        onUnlocked: onSecret ?? () {},
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/logo.png',
+            height: 28,
+            width: 28,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
       title: const Text(
@@ -1308,5 +1419,54 @@ class _SocialButton extends StatelessWidget {
       icon: Icon(icon, size: 18),
       label: Text(label),
     );
+  }
+}
+
+// ============================ Secret multi-tap helper ============================
+
+class _SecretTapDetector extends StatefulWidget {
+  const _SecretTapDetector({
+    required this.child,
+    required this.onUnlocked,
+    this.taps = 5,
+    this.window = const Duration(seconds: 2),
+    Key? key,
+  }) : super(key: key);
+
+  final Widget child;
+  final VoidCallback onUnlocked;
+  final int taps;
+  final Duration window;
+
+  @override
+  State<_SecretTapDetector> createState() => _SecretTapDetectorState();
+}
+
+class _SecretTapDetectorState extends State<_SecretTapDetector> {
+  int _count = 0;
+  Timer? _timer;
+
+  void _registerTap() {
+    _timer?.cancel();
+    _count++;
+    if (_count >= widget.taps) {
+      _count = 0;
+      widget.onUnlocked();
+      return;
+    }
+    _timer = Timer(widget.window, () {
+      _count = 0;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(onTap: _registerTap, child: widget.child);
   }
 }
