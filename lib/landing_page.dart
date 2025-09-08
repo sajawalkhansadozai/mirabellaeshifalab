@@ -274,6 +274,9 @@ class _LandingPageState extends State<LandingPage>
                 ),
               ),
 
+              // ===== Gallery (NEW) =====
+              const SliverToBoxAdapter(child: _GallerySection()),
+
               // Reviews
               SliverToBoxAdapter(child: _ReviewsSection(key: _reviewsKey)),
 
@@ -714,6 +717,227 @@ class _ServicesSection extends StatelessWidget {
     );
   }
 }
+
+// ============================ GALLERY (NEW) ============================
+class _GallerySection extends StatefulWidget {
+  const _GallerySection({super.key});
+
+  @override
+  State<_GallerySection> createState() => _GallerySectionState();
+}
+
+class _GallerySectionState extends State<_GallerySection> {
+  // If your files are at a different path, change basePath accordingly.
+  static const String basePath = 'assets/gallery/';
+  final List<String> _images = List.generate(
+    8,
+    (i) => '${basePath}${i + 1}.jpeg',
+  );
+
+  late final PageController _pageCtrl;
+  int _page = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  void _go(int targetPage, int totalPages) {
+    if (targetPage < 0 || targetPage >= totalPages) return;
+    _pageCtrl.animateToPage(
+      targetPage,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 80),
+      child: _SectionWrapper(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final maxW = c.maxWidth;
+            final itemsPerPage = maxW > 1100 ? 4 : (maxW > 750 ? 2 : 1);
+            final totalPages =
+                (_images.length + itemsPerPage - 1) ~/ itemsPerPage;
+
+            const gap = 16.0;
+            const tileHeight = 230.0;
+
+            return Column(
+              children: [
+                const Text(
+                  'Gallery',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: BrandColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'A quick look at our facility, team, and recent work.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: BrandColors.subtle),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: tileHeight,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      PageView.builder(
+                        controller: _pageCtrl,
+                        itemCount: totalPages,
+                        onPageChanged: (i) => setState(() => _page = i),
+                        itemBuilder: (_, pageIndex) {
+                          final start = pageIndex * itemsPerPage;
+                          final end = (start + itemsPerPage) > _images.length
+                              ? _images.length
+                              : (start + itemsPerPage);
+
+                          final children = <Widget>[];
+                          for (var i = 0; i < itemsPerPage; i++) {
+                            if (i > 0) children.add(const SizedBox(width: gap));
+                            final imgIndex = start + i;
+                            if (imgIndex < end) {
+                              children.add(
+                                Expanded(
+                                  child: _GalleryTile(path: _images[imgIndex]),
+                                ),
+                              );
+                            } else {
+                              children.add(const Expanded(child: SizedBox()));
+                            }
+                          }
+                          return Row(children: children);
+                        },
+                      ),
+
+                      // Left Arrow
+                      Positioned(
+                        left: 0,
+                        child: _ArrowBtn(
+                          icon: Icons.chevron_left,
+                          enabled: _page > 0,
+                          onTap: () => _go(_page - 1, totalPages),
+                        ),
+                      ),
+
+                      // Right Arrow
+                      Positioned(
+                        right: 0,
+                        child: _ArrowBtn(
+                          icon: Icons.chevron_right,
+                          enabled: _page < totalPages - 1,
+                          onTap: () => _go(_page + 1, totalPages),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _ArrowBtn extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+  const _ArrowBtn({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: enabled ? 2 : 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: enabled ? onTap : null,
+        child: Container(
+          width: 42,
+          height: 42,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: enabled ? Colors.white : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: enabled
+                  ? const Color(0x1A000000)
+                  : const Color(0x11000000),
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 24,
+            color: enabled ? BrandColors.ink : Colors.grey,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GalleryTile extends StatelessWidget {
+  final String path;
+  const _GalleryTile({required this.path, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return _HoverScale(
+      scale: 1.015,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierDismissible: true,
+              builder: (_) => Dialog(
+                insetPadding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: InteractiveViewer(
+                    panEnabled: true,
+                    minScale: 0.8,
+                    maxScale: 4,
+                    child: Image.asset(path, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            );
+          },
+          child: Image.asset(path, fit: BoxFit.cover),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================ Reviews ============================
 
 class _ReviewsSection extends StatelessWidget {
   const _ReviewsSection({super.key});
