@@ -520,7 +520,7 @@ class _HeroSection extends StatelessWidget {
 }
 
 class _SectionWrapper extends StatelessWidget {
-  const _SectionWrapper({super.key, required this.child});
+  const _SectionWrapper({required this.child});
   final Widget child;
   @override
   Widget build(BuildContext context) {
@@ -720,7 +720,7 @@ class _ServicesSection extends StatelessWidget {
 
 // ============================ GALLERY (NEW) ============================
 class _GallerySection extends StatefulWidget {
-  const _GallerySection({super.key});
+  const _GallerySection();
 
   @override
   State<_GallerySection> createState() => _GallerySectionState();
@@ -863,7 +863,6 @@ class _ArrowBtn extends StatelessWidget {
     required this.icon,
     required this.enabled,
     required this.onTap,
-    super.key,
   });
 
   @override
@@ -900,7 +899,7 @@ class _ArrowBtn extends StatelessWidget {
 
 class _GalleryTile extends StatelessWidget {
   final String path;
-  const _GalleryTile({required this.path, super.key});
+  const _GalleryTile({required this.path});
 
   @override
   Widget build(BuildContext context) {
@@ -1194,7 +1193,7 @@ class _ContactSection extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  const _Footer({super.key});
+  const _Footer();
 
   @override
   Widget build(BuildContext context) {
@@ -1220,7 +1219,7 @@ class _Footer extends StatelessWidget {
 // ============================ Small UI Pieces ============================
 
 class _NavLink extends StatelessWidget {
-  const _NavLink(this.label, this.onTap, {this.fontSize, super.key});
+  const _NavLink(this.label, this.onTap, {this.fontSize});
   final String label;
   final VoidCallback onTap;
   final double? fontSize;
@@ -1372,7 +1371,6 @@ class _ResponsiveGrid extends StatelessWidget {
     this.maxWidth,
     this.gap = 20,
     this.maxColumns = 6,
-    super.key,
   });
 
   final List<Widget> children;
@@ -1415,7 +1413,6 @@ class _HoverScale extends StatefulWidget {
     required this.child,
     this.scale = 1.02,
     this.duration = const Duration(milliseconds: 140),
-    super.key,
   });
   final Widget child;
   final double scale;
@@ -1446,7 +1443,6 @@ class _FeatureCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.text,
-    super.key,
   });
   final String icon;
   final String title;
@@ -1523,7 +1519,7 @@ class _FeatureCard extends StatelessWidget {
 }
 
 class _ServiceItem extends StatelessWidget {
-  const _ServiceItem({required this.title, required this.text, super.key});
+  const _ServiceItem({required this.title, required this.text});
   final String title;
   final String text;
 
@@ -1572,7 +1568,6 @@ class _ContactCard extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.text,
-    super.key,
   });
   final String icon;
   final String title;
@@ -1624,7 +1619,6 @@ class _SocialButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
-    super.key,
   });
   final String label;
   final IconData icon;
